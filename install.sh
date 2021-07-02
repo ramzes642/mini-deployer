@@ -25,9 +25,19 @@ function getArch() {
   esac
 }
 
+function issueShow() {
+    echo
+    echo "If you think that is an error, please report an issue with your uname parameters:"
+    echo "https://github.com/ramzes642/mini-deployer/issues"
+    echo "uname -a: " $(uname -a)
+    echo "uname -i: " $(uname -i)
+    echo "uname -o: " $(uname -o)
+}
+
 if [ $(ps -p 1 | grep -c systemd) != 1 ]
 then
   echo "ERROR: Only systemd linux systems are supported, sorry"
+  issueShow
   exit
 fi
 
@@ -48,9 +58,7 @@ then
   if [ $? != 0 ]
   then
     echo "ERROR: Download failed, it seems that your arch '$(getArch)' is not supported"
-    echo "If you think that is an error, please leave an issue with your uname -a:"
-    echo "uname -a: " $(uname -a)
-    echo "uname -i: " $(uname -i)
+    issueShow
     rm -rf /tmp/install-deployer
     exit
   fi
@@ -74,6 +82,6 @@ then
 
 
 else
-  echo Unsupported $(uname -a)
-  echo Report issue to https://github.com/ramzes642/mini-deployer/issues
+  echo Unsupported $(uname -o)
+  issueShow
 fi
