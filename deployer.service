@@ -1,0 +1,17 @@
+[Unit]
+Description=Deployment server
+Requires=network.target
+[Service]
+Type=simple
+WorkingDirectory=/tmp
+LimitNOFILE=65536
+ExecStart=/usr/bin/mini-deployer
+TimeoutStopSec=10
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=mini-deployer
+User=root
+[Install]
+WantedBy=default.target
