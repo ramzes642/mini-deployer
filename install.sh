@@ -13,11 +13,11 @@ function getArch() {
     aarch64)
       echo arm64;;
     unknown)
-      if $(uname -a | grep -c armv) = 1
+      if [ $(uname -a | grep -c armv) = 1 ]
       then
         echo arm
       fi
-      if $(uname -a | grep -c aarch64) = 1
+      if [ $(uname -a | grep -c aarch64) = 1 ]
       then
         echo arm64
       fi
