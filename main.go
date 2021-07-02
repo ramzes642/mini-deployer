@@ -16,7 +16,7 @@ import (
 )
 
 var listen = flag.String("listen", ":7654", "addr port")
-var config = flag.String("config", "/etc/deployer.json", "config file location")
+var config = flag.String("config", "/etc/mini-deployer.json", "config file location")
 
 type configFile struct {
 	Cert              string            `json:"cert"`
