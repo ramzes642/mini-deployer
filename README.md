@@ -12,10 +12,18 @@ serve you in your small CI/CD deployment tasks.
 
 Just define command in config and place a web-hook in your git to roll out your code changes in production.
 
-### Sample usage:
+## Quick start:
+
+#### Install latest version: 
+
+Systemd linux installer:
+```
+curl -s -o- https://raw.githubusercontent.com/ramzes642/mini-deployer/main/install.sh | sudo bash
+```
+Now only x86, amd64, arm, arm64 systemd linuxes are supported
 
 #### Modify config (/etc/micro-deployer.json)
-add inside "commands" key a new "micro" hook and a secret:
+Add inside "commands" key a new "micro" hook and a secret:
 ```json5
 {
   // ...
@@ -23,10 +31,17 @@ add inside "commands" key a new "micro" hook and a secret:
     "micro": "cd /var/www/micro && git pull"
   },
   "gitlab_token": "123456",
+  "github_secret": "123456"
   // ...
 }
 ```
-#### Add a gilab webhook:
+#### Add a GitHub webhook:
+* Go to Settings -> Webhooks
+* Enter Payload URL: http://my.server:7654/micro
+* Enter Secret: 123456
+* Click "Add webhook"
+
+#### Add a Gitlab webhook:
 * Go to Settings -> Webhooks
 * Enter URL: http://my.server:7654/micro
 * Enter Secret token: 123456
@@ -36,14 +51,6 @@ add inside "commands" key a new "micro" hook and a secret:
 That's it! You are done, you may click test - to check that your command works as expected.
 
 You can use either gitlab_token as a secret token or ip whitelist.
-
-### Install latest version: 
-
-Systemd linux installer:
-```
-curl -s -o- https://raw.githubusercontent.com/ramzes642/mini-deployer/main/install.sh | sudo bash
-```
-Now only x86, amd64, arm, arm64 systemd linuxes are supported
 
 ### Binary manual install
 Download [prebuilt binary archive](https://github.com/ramzes642/mini-deployer/releases)
