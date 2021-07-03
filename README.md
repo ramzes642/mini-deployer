@@ -16,11 +16,15 @@ Just define command in config and place a web-hook in your git to roll out your 
 
 #### Modify config (/etc/micro-deployer.json)
 add inside "commands" key a new "micro" hook and a secret:
-```json
-"commands": {
+```json5
+{
+  // ...
+  "commands": {
     "micro": "cd /var/www/micro && git pull"
-},
-"gitlab_token": "123456"
+  },
+  "gitlab_token": "123456",
+  // ...
+}
 ```
 #### Add a gilab webhook:
 * Go to Settings -> Webhooks
@@ -98,3 +102,8 @@ Usage of ./deployer:
 curl http://localhost:7654/reload
 
 _Works on same machine only if 127.0.0.1 is whitelisted in config (default)_
+
+### Uninstall:
+```shell
+sudo systemctl disable mini-deployer ; sudo rm /usr/bin/mini-deployer /etc/mini-deployer.json /etc/systemd/system/mini-deployer.service
+```
