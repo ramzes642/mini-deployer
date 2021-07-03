@@ -2,11 +2,9 @@
   "cert": "",
   "key": "",
   "commands": {
-    "micro": "cd /mnt/c/Users/Streaming/PhpstormProjects/mixupload && git pull"
   },
   "whitelist": [
     "127.0.0.1",
-    "172.17.0.1/24",
     "::1/128"
   ],
   "disable_autoreload": false,
