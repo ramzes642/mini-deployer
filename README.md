@@ -63,8 +63,8 @@ Edit config **/etc/mini-deployer.json** as you need
 ### Configuration sample:
 ```json5
 {
-  "cert": "",
-  "key": "",
+  "cert": "/etc/ssl/site.crt",
+  "key": "/etc/ssl/site.key",
   "commands": {
     "micro": "cd /var/www/micro && git pull"
   },
@@ -76,6 +76,7 @@ Edit config **/etc/mini-deployer.json** as you need
   "log": "",
   "disable_autoreload": false,
   "gitlab_token": "",
+  "github_secret": "",
   "timeout": 120
 }
 ```
@@ -85,6 +86,7 @@ Edit config **/etc/mini-deployer.json** as you need
 * log - path to logfile (if you leave it empty, as described in service file - logs will be in syslog)
 * disable_autoreload - disable autoreload feature (use curl localhost:7654/reload to do it manually) 
 * gitlab_token - Instead of using whitelist ips you may bypass it using gitlab_token config flag equal to "Secret token" from gitlab webhook configuration
+* github_secret - Or use GitHub secret
 * timeout - how many seconds to wait until process kill (default 10 seconds) 
 
 

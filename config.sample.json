@@ -8,5 +8,6 @@
     "::1/128"
   ],
   "disable_autoreload": false,
-  "gitlab_token": ""
+  "gitlab_token": "",
+  "github_secret": ""
 }

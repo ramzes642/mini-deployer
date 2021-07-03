@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -27,6 +30,7 @@ type configFile struct {
 	Timeout           int64             `json:"timeout"`
 	DisableAutoreload bool              `json:"disable_autoreload"`
 	GitlabToken       string            `json:"gitlab_token"`
+	GithubSecret      string            `json:"github_secret"`
 }
 
 var Cfg configFile
@@ -116,7 +120,10 @@ func ReadConfig() error {
 func RunHttp() {
 	for {
 		port := strings.Split(*listen, ":")[1]
-		fmt.Printf("Deployer started\n# curl http://localhost:%s/reload\t to manual reload\n\n", port)
+		fmt.Printf("Deployer started\n")
+		if Cfg.DisableAutoreload {
+			fmt.Printf("# curl http://localhost:%s/reload to manual reload\n", port)
+		}
 		mux := http.NewServeMux()
 
 		srv := &http.Server{Addr: *listen, Handler: logRequest(mux), ErrorLog: log.Default()}
@@ -155,7 +162,7 @@ func registerHandlers(srv *http.Server, mux *http.ServeMux) {
 				writer.WriteHeader(500)
 				wr.Write([]byte(fmt.Sprintf("run err: %s", err)))
 			}
-			done := make(chan error)
+			done := make(chan error, 1)
 			go func() { done <- c.Wait() }()
 
 			// Start a timer
@@ -209,9 +216,24 @@ func registerHandlers(srv *http.Server, mux *http.ServeMux) {
 	}
 }
 
+func checkGithubSig(secret string, header string, body []byte) bool {
+	s := hmac.New(sha256.New, []byte(secret))
+	s.Write(body)
+	hash := "sha256=" + hex.EncodeToString(s.Sum(nil))
+	return hash == header
+}
+
 func checkWhitelist(addr string, req *http.Request) bool {
 	if Cfg.GitlabToken != "" && req.Header.Get("X-Gitlab-Token") == Cfg.GitlabToken {
 		return true
+	}
+	if Cfg.GithubSecret != "" && req.Header.Get("X-Hub-Signature-256") != "" {
+		post, e := ioutil.ReadAll(req.Body)
+		if e != nil {
+			log.Printf("github post read error")
+			return false
+		}
+		return checkGithubSig(Cfg.GithubSecret, req.Header.Get("X-Hub-Signature-256"), post)
 	}
 
 	addrParts := strings.Split(addr, ":")
