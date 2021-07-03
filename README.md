@@ -14,15 +14,15 @@ Just define command in config and place a web-hook in your git to roll out your 
 
 ### Sample usage:
 
-Modify config (/etc/micro-deployer.json): add inside "commands" key a new "micro" hook and a secret:
+#### Modify config (/etc/micro-deployer.json)
+add inside "commands" key a new "micro" hook and a secret:
 ```json
 "commands": {
     "micro": "cd /var/www/micro && git pull"
 },
 "gitlab_token": "123456"
 ```
-
-* Add a gilab webhook:
+#### Add a gilab webhook:
 * Go to Settings -> Webhooks
 * Enter URL: http://my.server:7654/micro
 * Enter Secret token: 123456
