@@ -191,8 +191,12 @@ func registerHandlers(srv *http.Server, mux *http.ServeMux) {
 		err := ReadConfig()
 		if err != nil {
 			writer.Write([]byte(fmt.Sprintf("reload err: %s", err)))
+			return
 		}
-		go srv.Shutdown(context.Background())
+		writer.Write([]byte(fmt.Sprintf("reload ok")))
+		time.AfterFunc(time.Second, func() {
+			srv.Shutdown(context.Background())
+		})
 	})
 
 	if !Cfg.DisableAutoreload {
