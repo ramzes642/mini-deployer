@@ -40,7 +40,7 @@ function issueShow() {
 if [ $(ps -p 1 | grep -c systemd) != 1 ]; then
   echo "ERROR: Only systemd linux systems are supported, sorry"
   issueShow
-  #exit
+  exit
 fi
 
 if [ "$(uname -o)" = "GNU/Linux" ]; then
