@@ -13,13 +13,13 @@ jobs:
         goarch: ["386", amd64, arm64, arm]
     steps:
       - uses: actions/checkout@v2
-      - uses: wangyoucao577/go-release-action@v1.18
+      - uses: wangyoucao577/go-release-action@v1.20
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           binary_name: "mini-deployer"
-          goversion: "https://dl.google.com/go/go1.16.6.linux-amd64.tar.gz"
+          goversion: "https://dl.google.com/go/go1.20.1.linux-amd64.tar.gz"
           extra_files: deployer.service config.sample.json
 
   build:
