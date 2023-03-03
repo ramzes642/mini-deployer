@@ -97,6 +97,52 @@ Edit config **/etc/mini-deployer.json** as you need
 * timeout - how many seconds to wait until process kill (default 10 seconds) 
 
 
+### JWT Authorization
+You can also use jwt token authorization in request header:
+* Authorization: bearer **<token>**
+```json5
+{
+  "jwt_hmac": "shared_secret",
+  "jwt_claim": "grp",
+  "jwt_claim_any": ["admin", "root"]
+}
+```
+This config will check that grp claim has any of provided values, admin or root in example.
+```go
+// MarshalSigned Simple sign function
+func MarshalSigned(v any, secret []byte) (string, error) {
+	hasher := hmac.New(sha256.New, secret)
+
+	header, _ := json.Marshal(map[string]string{
+		"alg": "HS256",
+		"typ": "JWT",
+	})
+
+	payload, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+
+	headerB64 := base64.RawURLEncoding.EncodeToString(header)
+	payloadB64 := base64.RawURLEncoding.EncodeToString(payload)
+
+	hasher.Write(bytes.Join([][]byte{[]byte(headerB64), []byte(payloadB64)}, []byte(".")))
+	signature := hasher.Sum(nil)
+
+	sigB64 := base64.RawURLEncoding.EncodeToString(signature)
+
+	jwt := strings.Join([]string{
+		headerB64, payloadB64, sigB64,
+	}, ".")
+
+	return jwt, nil
+}
+
+// example sign
+
+token, _ := MarshalSigned(map[string]string{"grp": "root"}, "shared_secret")
+```
+
 ### Binary run flags:
 ```shell
 Usage of ./deployer:

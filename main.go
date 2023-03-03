@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -31,6 +33,9 @@ type configFile struct {
 	DisableAutoreload bool              `json:"disable_autoreload"`
 	GitlabToken       string            `json:"gitlab_token"`
 	GithubSecret      string            `json:"github_secret"`
+	JwtHmac           string            `json:"jwt_hmac"`
+	JwtClaim          string            `json:"jwt_claim"`
+	JwtClaimAny       []string          `json:"jwt_claim_any"`
 }
 
 var Cfg configFile
@@ -181,7 +186,7 @@ func registerHandlers(srv *http.Server, mux *http.ServeMux) {
 					writer.WriteHeader(500)
 					wr.Write([]byte(fmt.Sprintf("run err code: %d", c.ProcessState.ExitCode())))
 				} else {
-					wr.Write([]byte("Command done ok"))
+					//wr.Write([]byte("Command done ok"))
 				}
 			}
 
@@ -228,12 +233,15 @@ func checkWhitelist(addr string, req *http.Request) bool {
 		return true
 	}
 	if Cfg.GithubSecret != "" && req.Header.Get("X-Hub-Signature-256") != "" {
-		post, e := ioutil.ReadAll(req.Body)
+		post, e := io.ReadAll(req.Body)
 		if e != nil {
 			log.Printf("github post read error")
 			return false
 		}
 		return checkGithubSig(Cfg.GithubSecret, req.Header.Get("X-Hub-Signature-256"), post)
+	}
+	if Cfg.JwtHmac != "" && Cfg.JwtClaim != "" && req.Header.Get("Authorization") != "" {
+		return checkJwt(req.Header.Get("Authorization"))
 	}
 
 	addrParts := strings.Split(addr, ":")
@@ -251,6 +259,32 @@ func checkWhitelist(addr string, req *http.Request) bool {
 		}
 	}
 	return false
+}
+
+func checkJwt(auth string) bool {
+	header := strings.SplitN(auth, " ", 2)
+	if len(header) != 2 && header[0] != "Bearer" {
+		log.Printf("Authorization header error")
+		return false
+	}
+	var payload map[string]interface{}
+	err := JwtUnmarshal(header[1], &payload, []byte(Cfg.JwtHmac))
+	if err != nil {
+		log.Printf("Jwt err %s", err)
+		return false
+	}
+	if claim, ok := payload[Cfg.JwtClaim].(string); ok && claim != "" {
+		for _, acceptable := range Cfg.JwtClaimAny {
+			if claim == acceptable {
+				return true
+			}
+		}
+		log.Printf("Jwt forbidden %s", claim)
+		return false
+	} else {
+		log.Printf("Jwt claim not found")
+		return false
+	}
 }
 
 type LogWriter struct {
@@ -274,4 +308,37 @@ func logRequest(handler http.Handler) http.Handler {
 		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 		handler.ServeHTTP(w, r)
 	})
+}
+
+func JwtUnmarshal(jwt string, v any, secret []byte) error {
+	hasher := hmac.New(sha256.New, secret)
+
+	parts := strings.SplitN(jwt, ".", 3)
+	if len(parts) != 3 {
+		return fmt.Errorf("jwt parts count mismatch")
+	}
+
+	var headerB64, payloadB64, sigB64 string = parts[0], parts[1], parts[2]
+	signature, err := base64.RawURLEncoding.DecodeString(sigB64)
+	if err != nil {
+		return fmt.Errorf("jwt sig b64 unpack err")
+	}
+
+	hasher.Write([]byte(headerB64 + "." + payloadB64))
+	signature2 := hasher.Sum(nil)
+	if !hmac.Equal(signature, signature2[:hasher.Size()]) {
+		return fmt.Errorf("jwt signature validation error")
+	}
+
+	payload, err := base64.RawURLEncoding.DecodeString(payloadB64)
+	if err != nil {
+		return fmt.Errorf("jwt payload b64 unpack err: %s", err)
+	}
+
+	err = json.Unmarshal(payload, &v)
+	if err != nil {
+		return fmt.Errorf("jwt payload json unpack err: %s", err)
+	}
+
+	return nil
 }
