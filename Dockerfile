@@ -14,7 +14,7 @@ FROM alpine:latest
 RUN apk add --no-cache bash ca-certificates
 
 COPY --from=build /go/src/deployer/deployer /deployer
-COPY config.sample.json /etc/config.json
+COPY config.sample.json /etc/mini-deployer.json
 
 EXPOSE 7654
 
