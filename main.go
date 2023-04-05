@@ -9,13 +9,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 )
@@ -99,7 +96,7 @@ func autoReload(ctx context.Context, srv *http.Server) {
 var cancelAutoreload context.CancelFunc
 
 func ReadConfig() error {
-	cfg, err := ioutil.ReadFile(*config)
+	cfg, err := os.ReadFile(*config)
 	if err != nil {
 		return fmt.Errorf("could not open config file: %s", err)
 	}
@@ -147,69 +144,9 @@ func RunHttp() {
 
 func registerHandlers(srv *http.Server, mux *http.ServeMux) {
 	for addr, cmd := range Cfg.Commands {
-		cmd := cmd
-		addr := addr
-		mux.HandleFunc("/"+addr, func(writer http.ResponseWriter, request *http.Request) {
-			if !checkWhitelist(request.RemoteAddr, request) {
-				log.Printf("Access to %s for ip %s is forbidden", addr, request.RemoteAddr)
-				writer.WriteHeader(403)
-				writer.Write([]byte("Forbidden to " + request.RemoteAddr))
-				return
-			}
-			c := exec.Command("sh", "-c", cmd)
-			c.Env = os.Environ()
-			wr := NewLogWriter("["+addr+"]", writer)
-			c.Stdout = wr
-			c.Stderr = wr
-
-			err := c.Start()
-			if err != nil {
-				writer.WriteHeader(500)
-				wr.Write([]byte(fmt.Sprintf("run err: %s", err)))
-			}
-			done := make(chan error, 1)
-			go func() { done <- c.Wait() }()
-
-			// Start a timer
-			timeout := time.After(time.Duration(Cfg.Timeout) * time.Second)
-			select {
-			case <-timeout:
-				// Timeout happened first, kill the process and print a message.
-				c.Process.Kill()
-				writer.WriteHeader(500)
-				wr.Write([]byte(fmt.Sprintf("Command timed out")))
-			case err := <-done:
-				if err != nil {
-					writer.WriteHeader(500)
-					wr.Write([]byte(fmt.Sprintf("run err: %s", err)))
-				} else if c.ProcessState.ExitCode() != 0 {
-					writer.WriteHeader(500)
-					wr.Write([]byte(fmt.Sprintf("run err code: %d", c.ProcessState.ExitCode())))
-				} else {
-					//wr.Write([]byte("Command done ok"))
-				}
-			}
-
-		})
+		mux.HandleFunc("/"+addr, runHandler(cmd, addr))
 	}
-	mux.HandleFunc("/reload", func(writer http.ResponseWriter, request *http.Request) {
-		if !checkWhitelist(request.RemoteAddr, request) {
-			log.Printf("Access to reload for ip %s is forbidden", request.RemoteAddr)
-			writer.WriteHeader(403)
-			writer.Write([]byte("Forbidden"))
-			return
-		}
-
-		err := ReadConfig()
-		if err != nil {
-			writer.Write([]byte(fmt.Sprintf("reload err: %s", err)))
-			return
-		}
-		writer.Write([]byte(fmt.Sprintf("reload ok")))
-		time.AfterFunc(time.Second, func() {
-			srv.Shutdown(context.Background())
-		})
-	})
+	mux.HandleFunc("/reload", reloadHandler(srv))
 
 	if !Cfg.DisableAutoreload {
 		if cancelAutoreload != nil {
@@ -228,17 +165,12 @@ func checkGithubSig(secret string, header string, body []byte) bool {
 	return hash == header
 }
 
-func checkWhitelist(addr string, req *http.Request) bool {
+func checkWhitelist(addr string, req *http.Request, postBody []byte) bool {
 	if Cfg.GitlabToken != "" && req.Header.Get("X-Gitlab-Token") == Cfg.GitlabToken {
 		return true
 	}
-	if Cfg.GithubSecret != "" && req.Header.Get("X-Hub-Signature-256") != "" {
-		post, e := io.ReadAll(req.Body)
-		if e != nil {
-			log.Printf("github post read error")
-			return false
-		}
-		return checkGithubSig(Cfg.GithubSecret, req.Header.Get("X-Hub-Signature-256"), post)
+	if Cfg.GithubSecret != "" && req.Header.Get("X-Hub-Signature-256") != "" && postBody != nil {
+		return checkGithubSig(Cfg.GithubSecret, req.Header.Get("X-Hub-Signature-256"), postBody)
 	}
 	if Cfg.JwtHmac != "" && Cfg.JwtClaim != "" && req.Header.Get("Authorization") != "" {
 		return checkJwt(req.Header.Get("Authorization"))

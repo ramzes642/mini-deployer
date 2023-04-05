@@ -96,6 +96,9 @@ Edit config **/etc/mini-deployer.json** as you need
 * github_secret - Or use GitHub secret
 * timeout - how many seconds to wait until process kill (default 10 seconds) 
 
+### Post forms
+* If post form contains data - it is passed to stdin.
+* If post form content-type is application/x-www-form-urlencoded - than env variables in format POST_{key}={value} appears
 
 ### JWT Authorization
 You can also use jwt token authorization in request header:
