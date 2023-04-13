@@ -15,9 +15,16 @@ jobs:
         goos: [linux]
         goarch: ["386", amd64, arm64, arm]
     steps:
-      - uses: actions/checkout@v2
-      - name: GoReleaser Action
-      - uses: goreleaser/goreleaser-action@v4.2.0
+      - 
+        uses: actions/checkout@v3
+        name: GoReleaser Action
+        with:
+          fetch-depth: 0
+      -
+        name: Set up Go
+        uses: actions/setup-go@v3
+      - 
+        uses: goreleaser/goreleaser-action@v4.2.0
         with:
           distribution: goreleaser
           version: latest
