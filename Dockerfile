@@ -6,6 +6,7 @@ WORKDIR /go/src/deployer
 
 COPY go.mod ./
 COPY main.go ./
+COPY handler.go ./
 
 RUN go build -o ./deployer .
 
