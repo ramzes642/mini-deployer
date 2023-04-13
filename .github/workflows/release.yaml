@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: GoReleaser Action
-        uses: goreleaser/goreleaser-action@v4.2.0
+      - uses: goreleaser/goreleaser-action@v4.2.0
         with:
           distribution: goreleaser
           version: latest
