@@ -1,6 +1,9 @@
 on:
   release:
     types: [created]
+  push:
+    tags:
+      - '*'
 
 jobs:
   releases-matrix:
@@ -13,14 +16,22 @@ jobs:
         goarch: ["386", amd64, arm64, arm]
     steps:
       - uses: actions/checkout@v2
-      - uses: wangyoucao577/go-release-action@v1.20
+      - name: GoReleaser Action
+        uses: goreleaser/goreleaser-action@v4.2.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          goos: ${{ matrix.goos }}
-          goarch: ${{ matrix.goarch }}
-          binary_name: "mini-deployer"
-          goversion: "https://dl.google.com/go/go1.20.1.linux-amd64.tar.gz"
-          extra_files: deployer.service config.sample.json
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       - uses: wangyoucao577/go-release-action@v1.20
+#         with:
+#           github_token: ${{ secrets.GITHUB_TOKEN }}
+#           goos: ${{ matrix.goos }}
+#           goarch: ${{ matrix.goarch }}
+#           binary_name: "mini-deployer"
+#           goversion: "https://dl.google.com/go/go1.20.1.linux-amd64.tar.gz"
+#           extra_files: deployer.service config.sample.json
 
   build:
     # The type of runner that the job will run on
