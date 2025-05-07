@@ -1,4 +1,4 @@
 config.json
 .idea
-
 dist/
+.DS_Store
