@@ -83,7 +83,6 @@ func autoReload(ctx context.Context, srv *http.Server) {
 				return
 			}
 			if lastChangeCert != getMtime(Cfg.Cert) {
-				lastChangeCert = getMtime(Cfg.Cert)
 				log.Printf("Detected certificate change")
 				srv.Shutdown(context.Background())
 				return

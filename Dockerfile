@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine as build
+FROM golang:1.23-alpine AS build
 
 
 RUN mkdir /go/src/deployer
